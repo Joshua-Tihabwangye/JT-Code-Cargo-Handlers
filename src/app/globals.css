@@ -2,6 +2,18 @@
 @import "tw-animate-css";
 @import "../styles/vendor/shadcn-tailwind-4.13.0.css";
 
+/* Self-hosted (latin subset, from Google Fonts) so text never waits on a
+   second origin. Preloads for the headline faces are in layout.tsx. */
+@font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 500; font-display: swap; src: url("/fonts/barlow-condensed-500-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 600; font-display: swap; src: url("/fonts/barlow-condensed-600-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 700; font-display: swap; src: url("/fonts/barlow-condensed-700-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 800; font-display: swap; src: url("/fonts/barlow-condensed-800-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 400; font-display: swap; src: url("/fonts/ibm-plex-mono-400-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: swap; src: url("/fonts/ibm-plex-mono-500-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 600; font-display: swap; src: url("/fonts/ibm-plex-mono-600-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "IBM Plex Sans"; font-style: normal; font-weight: 400 600; font-display: swap; src: url("/fonts/ibm-plex-sans-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Instrument Serif"; font-style: italic; font-weight: 400; font-display: swap; src: url("/fonts/instrument-serif-400-italic-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
 /*
  * JT-Code Cargo
  * Palette taken from the yard: warm asphalt black, waybill paper and
@@ -238,22 +250,11 @@ html[data-chapter="about"] .site-header a[data-section="about"]::after { transfo
 /* ---------------------------------------------------------------- scene */
 
 .scene-layer { position: fixed; inset: 0; z-index: 0; overflow: hidden; background: var(--ink); }
-.frame-poster, .frame-ambient, .frame-canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
-.frame-poster, .frame-ambient, .frame-canvas { object-fit: cover; }
-.frame-ambient { display: none; }
+/* The footage fills the screen at every aspect ratio. Portrait screens get
+   a full-height centre crop of each frame (see frame-sequence.tsx). */
+.frame-poster, .frame-canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
 /* Canvas starts opaque black; keep it hidden until it has drawn a frame. */
 .frame-canvas:not([data-live]) { visibility: hidden; }
-
-/*
- * Portrait screens: a 16:9 frame scaled to fill the height loses ~75% of its
- * width. Show the whole frame across the width instead, over a soft stretched
- * copy of itself. Keep in sync with PORTRAIT in frame-sequence.tsx.
- */
-@media (max-aspect-ratio: 1/1) {
-  .frame-poster, .frame-canvas { object-fit: contain; object-position: 50% 42%; }
-  .frame-ambient { display: block; }
-  .frame-ambient:not([data-live]) { visibility: hidden; }
-}
 .scene-shade { position: absolute; inset: 0; pointer-events: none; transition: opacity 700ms ease; }
 .scene-shade--left { background: linear-gradient(90deg, rgb(10 10 8 / 0.88) 0%, rgb(10 10 8 / 0.7) 28%, rgb(10 10 8 / 0.22) 52%, transparent 66%); }
 .scene-shade--right { opacity: 0; background: linear-gradient(270deg, rgb(10 10 8 / 0.88) 0%, rgb(10 10 8 / 0.7) 28%, rgb(10 10 8 / 0.22) 52%, transparent 66%); }
@@ -466,21 +467,29 @@ html:not([data-ready]) :is(.hero-route, .hero-body) { opacity: 0; transform: tra
 
 /* The estimator is printed matter: a waybill on top of the footage. */
 .waybill {
+  /* Dark tint, light print: the waybill's own rules and text recolour. */
+  --ink: var(--paper);
+  --ink-muted: rgb(242 237 227 / 0.72);
+  --orange-deep: var(--orange);
   position: relative;
+  border: 1px solid var(--rule-strong);
   border-radius: 2px;
   padding: 1.6rem 1.4rem 1.1rem;
-  /* Frosted paper: the footage shows through, the form stays legible. */
-  background: rgb(242 237 227 / 0.72);
-  backdrop-filter: blur(10px) saturate(1.15);
-  -webkit-backdrop-filter: blur(10px) saturate(1.15);
+  /*
+   * Translucent, so the footage shows through. No backdrop blur: over footage
+   * that changes every scroll frame it is re-rendered every frame, which is
+   * what made scrolling through the warehouse chapter stutter.
+   */
+  background: rgb(14 14 12 / 0.4);
   color: var(--ink);
-  box-shadow: 0 30px 60px rgb(0 0 0 / 0.35);
+  text-shadow: 0 1px 10px rgb(0 0 0 / 0.55);
+  box-shadow: 0 30px 60px rgb(0 0 0 / 0.25);
 }
 .waybill::before {
   position: absolute;
   inset: 0 0 auto;
   height: 9px;
-  background: repeating-linear-gradient(-45deg, var(--ink) 0 7px, var(--orange) 7px 14px);
+  background: repeating-linear-gradient(-45deg, var(--ink-soft) 0 7px, var(--orange) 7px 14px);
   content: "";
 }
 .waybill__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding-bottom: 0.9rem; border-bottom: 2px solid var(--ink); }
@@ -513,12 +522,13 @@ html:not([data-ready]) :is(.hero-route, .hero-body) { opacity: 0; transform: tra
   background-repeat: no-repeat;
   background-size: 5px 5px;
 }
-.waybill__fields option { background: var(--paper); color: var(--ink); }
-.waybill__fields input::placeholder { color: #6f695e; }
+.waybill__fields option { background: var(--ink-soft); color: var(--paper); }
+.waybill__fields input::placeholder { color: var(--stone); }
 .waybill__fields :is(select, input):focus { border-bottom-color: var(--orange-deep); outline: 0; }
-.waybill__fields [aria-invalid="true"] { border-bottom-color: #b3261e; }
-.waybill .button--ink { width: 100%; margin-top: 1.3rem; }
-.waybill .form-error { margin-top: 0.8rem; color: #b3261e; font-size: 0.86rem; }
+.waybill__fields [aria-invalid="true"] { border-bottom-color: #ff8a7a; }
+.waybill .button--ink { width: 100%; margin-top: 1.3rem; background: var(--orange); color: var(--ink-soft); text-shadow: none; }
+.waybill .button--ink:hover { background: var(--paper); }
+.waybill .form-error { margin-top: 0.8rem; color: #ff8a7a; font-size: 0.86rem; }
 
 .waybill__result {
   display: flex;
@@ -565,14 +575,15 @@ html:not([data-ready]) :is(.hero-route, .hero-body) { opacity: 0; transform: tra
   position: relative;
   z-index: 5;
   padding: 4.5rem var(--gutter) 1.8rem;
-  background: rgb(14 14 12 / 0.62);
-  /* The footage holds its last frame down here, so the blur is cheap. */
-  backdrop-filter: blur(18px) saturate(1.1);
-  -webkit-backdrop-filter: blur(18px) saturate(1.1);
+  /* No backdrop blur: the footer moves over the footage as it scrolls, so a
+     blur would be recomputed every frame. */
+  background: rgb(14 14 12 / 0.9);
 }
 .site-footer::before { position: absolute; inset: 0 0 auto; height: 6px; background: repeating-linear-gradient(-45deg, var(--orange) 0 10px, transparent 10px 20px); content: ""; }
 .footer-lead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2rem; padding-bottom: 2.6rem; border-bottom: 1px solid var(--rule); }
 .footer-lead .headline { font-size: clamp(1.9rem, 3vw, 3.1rem); }
+/* On the footer's solid ground the lift shadow only shows as a box clipped by .headline__line. */
+.footer-lead .headline__line > span { text-shadow: none; }
 .footer-grid { display: grid; grid-template-columns: 1.3fr repeat(3, 1fr); gap: 2rem; padding: 2.6rem 0; }
 .footer-grid > div { display: flex; align-items: flex-start; flex-direction: column; gap: 0.5rem; }
 .brand--footer { flex-direction: row !important; align-items: center !important; align-self: start; }
@@ -630,11 +641,42 @@ html:not([data-ready]) :is(.hero-route, .hero-body) { opacity: 0; transform: tra
   .capability-list { grid-template-columns: 1fr; }
   .hero-signals { flex-direction: column; gap: 0.35rem; }
   .waybill { padding: 1.4rem 1rem 1rem; }
-  .waybill__fields { grid-template-columns: 1fr; }
+  /* From and To side by side; Cargo and Weight take the full row. */
+  .waybill__fields { gap: 1rem 0.9rem; }
+  .waybill__fields label:nth-child(n + 3) { grid-column: 1 / -1; }
   .waybill__result { flex-wrap: wrap; }
-  .site-footer { padding-top: 4rem; }
-  .footer-grid { grid-template-columns: 1fr; }
-  .footer-base { flex-direction: column; gap: 0.5rem; }
+  .site-footer { padding-top: 3rem; }
+  .footer-base { flex-direction: column; align-items: center; gap: 0.5rem; }
+
+  /* The estimator is one tap away in the menu; no separate call-to-action buttons. */
+  .hero-actions .button, .footer-lead .button { display: none; }
+
+  /* Copy is centred over the footage. */
+  .zone-copy, .site-footer { text-align: center; }
+  .chapter-tag, .hero-route, .hero-actions { flex-wrap: wrap; justify-content: center; row-gap: 0.4rem; }
+  .hero-body, .lede, .ruled-text, .operations-list p, .capability-list { margin-inline: auto; }
+  .ruled-text { padding-left: 0; border-left: 0; }
+  .hero-signals { align-items: center; }
+  .operations-list li { grid-template-columns: 1fr; justify-items: center; row-gap: 0.35rem; }
+  .operations-list__no { padding-top: 0; }
+  .proof-points div { padding: 0.8rem 0 0; border-left: 0; border-top: 3px solid var(--orange); }
+  .capability-list { grid-template-columns: 1fr 1fr; column-gap: 1rem; }
+  .capability-list li { justify-content: center; font-size: 0.88rem; }
+  .capability-list li:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .principles li { grid-template-columns: 1fr; justify-items: center; }
+  .principles li::before { grid-row: auto; padding-top: 0; }
+  .about-quote p { text-indent: 0; }
+  .waybill { text-align: left; }
+
+  /* Footer as a compact matrix: Journey links 2x2, then Network desk | Status. */
+  .footer-lead { justify-content: center; padding-bottom: 2rem; }
+  .footer-grid { grid-template-columns: 1fr 1fr; gap: 1.8rem 1rem; padding: 2rem 0; }
+  .footer-grid > div { align-items: center; }
+  .brand--footer { grid-column: 1 / -1; justify-self: center; }
+  .footer-grid > div:nth-child(2) { display: grid; grid-column: 1 / -1; grid-template-columns: 1fr 1fr; gap: 0.6rem 1rem; }
+  .footer-grid > div:nth-child(2) h3 { grid-column: 1 / -1; }
+  .footer-grid a, .footer-grid p { font-size: 0.86rem; }
+  .footer-online { justify-content: center; }
 }
 
 @media (prefers-reduced-motion: reduce) {

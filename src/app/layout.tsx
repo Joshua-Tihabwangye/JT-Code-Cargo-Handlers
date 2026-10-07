@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 
 // Footage and text appear in the same paint: hold the page until the first
 // frame and the headline fonts are decoded (cached visits: instant), never
-// longer than 1.5 s.
+// longer than 0.8 s: past that, a blank page costs more than a font swap.
 const firstPaintGate = `(function () {
   var root = document.documentElement;
   var done = function () { root.dataset.ready = "true"; };
@@ -39,7 +39,7 @@ const firstPaintGate = `(function () {
       ])
     : Promise.resolve();
   Promise.all([poster.decode(), fonts]).then(done, done);
-  setTimeout(done, 1500);
+  setTimeout(done, 800);
 })();`;
 
 export default function RootLayout({
@@ -52,12 +52,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="preload" as="image" href="/frames-webp/frame-0001.webp" fetchPriority="high" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@0;1&display=swap"
-        />
+        {/* Fonts are self-hosted (globals.css); fetch the two the first paint waits on early. */}
+        <link rel="preload" as="font" type="font/woff2" href="/fonts/barlow-condensed-800-latin.woff2" crossOrigin="anonymous" />
+        <link rel="preload" as="font" type="font/woff2" href="/fonts/ibm-plex-sans-latin.woff2" crossOrigin="anonymous" />
         <script dangerouslySetInnerHTML={{ __html: firstPaintGate }} />
         <noscript>
           <style>{`.site-header,.logistics-story,.scene-layer{opacity:1!important}`}</style>

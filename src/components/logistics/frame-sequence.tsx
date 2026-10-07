@@ -1,28 +1,39 @@
 "use client";
 
-import { useEffect, useRef, type RefObject } from "react";
+import { useEffect, useRef, useSyncExternalStore, type RefObject } from "react";
 
 const FRAME_COUNT = 240;
-// Native size of every frame. The canvas backing store matches it exactly so
-// each draw is a 1:1 copy; CSS (object-fit: cover) scales it to the screen on
-// the compositor. Scaling inside drawImage costs 50-300 ms per frame when
-// Chrome has no GPU acceleration, which is what stalled the footage.
-const FRAME_WIDTH = 1280;
-const FRAME_HEIGHT = 720;
-// Portrait screens show the whole 16:9 frame (object-fit: contain) and fill
-// the space above and below with this tiny copy, stretched and therefore
-// soft. Keep in sync with the portrait @media block in globals.css.
+// Native size of every frame in each set. The canvas backing store matches it
+// exactly so each draw is a 1:1 copy; CSS (object-fit: cover) scales it to the
+// screen on the compositor. Scaling inside drawImage costs 50-300 ms per frame
+// when Chrome has no GPU acceleration, which is what stalled the footage.
+// Portrait screens fill the screen with a full-height centre crop of each
+// frame: as sharp as the full frame where it is seen, under half the download,
+// and each decoded bitmap is under half the memory, so it gets a longer
+// lookahead. See scripts/prepare-frame-sequence.mjs.
 const PORTRAIT = "(max-aspect-ratio: 1/1)";
-const AMBIENT_WIDTH = 48;
-const AMBIENT_HEIGHT = 27;
+const FRAME_SETS = {
+  landscape: { directory: "frames-webp", width: 1280, height: 720, cacheSize: 20 },
+  portrait: { directory: "frames-webp-portrait", width: 576, height: 720, cacheSize: 40 },
+};
+
+function subscribeToPortrait(onChange: () => void) {
+  const query = window.matchMedia(PORTRAIT);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
 const FETCH_CONCURRENCY = 6;
+// Download order: the next NEAR_FETCH frames at full rate, then a coarse pass
+// over the whole sequence, then the in-betweens.
+const NEAR_FETCH = 24;
+const COARSE_STEP = 4;
 const MAX_ATTEMPTS = 3;
 // Scroll stops feeding new values while the wheel/touch is still settling;
 // after this long we round to a whole frame so a resting image is never a blend.
 const IDLE_SNAP_MS = 140;
 
-function frameUrl(index: number) {
-  return `/frames-webp/frame-${String(index + 1).padStart(4, "0")}.webp`;
+function frameUrl(directory: string, index: number) {
+  return `/${directory}/frame-${String(index + 1).padStart(4, "0")}.webp`;
 }
 
 interface Stop {
@@ -38,15 +49,20 @@ interface FrameSequenceProps {
 /**
  * Scroll-scrubbed image sequence.
  *
- * Compressed frames (~17 MB) are all kept as Blobs. Decoded bitmaps are
- * expensive (1280x720x4 = 3.7 MB each, plus a GPU copy once drawn), so only a
+ * Compressed frames (~11 MB, ~5 MB in portrait) are all kept as Blobs. Decoded
+ * bitmaps are expensive (1280x720x4 = 3.7 MB each, plus a GPU copy once drawn), so only a
  * small window around the playhead is kept decoded. The window is biased
  * towards the direction of travel and refilled on every animation frame —
  * never only after scrolling stops — which is what keeps a small cache smooth.
  */
 export function FrameSequence({ storyRef, reducedMotion }: FrameSequenceProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const ambientRef = useRef<HTMLCanvasElement>(null);
+  // Rotating the phone restarts the sequence with the other frame set.
+  const portrait = useSyncExternalStore(
+    subscribeToPortrait,
+    () => window.matchMedia(PORTRAIT).matches,
+    () => false,
+  );
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -54,15 +70,13 @@ export function FrameSequence({ storyRef, reducedMotion }: FrameSequenceProps) {
     if (!canvas || !story) return;
     const context = canvas.getContext("2d", { alpha: false });
     if (!context) return;
-    const ambient = ambientRef.current;
-    const ambientContext = ambient?.getContext("2d", { alpha: false });
-    const portrait = window.matchMedia(PORTRAIT);
 
     // Hard memory ceiling: ~75 MB of bitmaps on desktop, ~66 MB on phones.
     // A bigger cache crashed tabs on machines that were already short on RAM.
-    // Phones get nearly the same window: their shorter page covers more
-    // frames per swipe, so they need the lookahead as much as desktops do.
-    const cacheSize = window.innerWidth < 760 ? 18 : 20;
+    // Phones' shorter page covers more frames per swipe, so the portrait set's
+    // cheaper bitmaps go into a longer lookahead rather than a lower ceiling.
+    const frameSet = portrait ? FRAME_SETS.portrait : FRAME_SETS.landscape;
+    const { directory, width: frameWidth, height: frameHeight, cacheSize } = frameSet;
     // createImageBitmap decodes off the main thread; use the cores we have.
     const decodeConcurrency = Math.min(4, Math.max(2, (navigator.hardwareConcurrency || 4) - 1));
     const ahead = Math.round(cacheSize * 0.7);
@@ -133,11 +147,26 @@ export function FrameSequence({ storyRef, reducedMotion }: FrameSequenceProps) {
       index >= 0 && index < FRAME_COUNT && !blobs[index] && !fetching.has(index) && attempts[index] < MAX_ATTEMPTS;
 
     const nextFetchIndex = () => {
-      // Follow the playhead in the direction of travel, then fill the rest.
+      // Follow the playhead in the direction of travel for the next stretch...
       const center = Math.round(displayed);
-      for (let distance = 0; distance < FRAME_COUNT; distance += 1) {
+      for (let distance = 0; distance <= NEAR_FETCH; distance += 1) {
         if (needsFetch(center + distance * direction)) return center + distance * direction;
         if (distance <= 6 && needsFetch(center - distance * direction)) return center - distance * direction;
+      }
+      // ...then every COARSE_STEP-th frame of the rest, so scrolling into
+      // footage that hasn't fully arrived still finds a nearby frame instead
+      // of freezing on the last one (what made the first scroll feel stuck)...
+      for (let distance = 0; distance < FRAME_COUNT; distance += 1) {
+        const index = center + distance * direction;
+        if (index % COARSE_STEP === 0 && needsFetch(index)) return index;
+      }
+      for (let index = 0; index < FRAME_COUNT; index += COARSE_STEP) {
+        if (needsFetch(index)) return index;
+      }
+      // ...then fill in the gaps, nearest the playhead first.
+      for (let distance = 0; distance < FRAME_COUNT; distance += 1) {
+        if (needsFetch(center + distance * direction)) return center + distance * direction;
+        if (needsFetch(center - distance * direction)) return center - distance * direction;
       }
       for (let index = 0; index < FRAME_COUNT; index += 1) {
         if (needsFetch(index)) return index;
@@ -152,7 +181,7 @@ export function FrameSequence({ storyRef, reducedMotion }: FrameSequenceProps) {
         fetching.add(index);
         attempts[index] += 1;
         try {
-          const response = await fetch(frameUrl(index), { cache: "force-cache" });
+          const response = await fetch(frameUrl(directory, index), { cache: "force-cache" });
           if (!response.ok) throw new Error(`Frame ${index + 1} returned ${response.status}`);
           blobs[index] = await response.blob();
         } catch (error) {
@@ -233,7 +262,7 @@ export function FrameSequence({ storyRef, reducedMotion }: FrameSequenceProps) {
     // ---- drawing -------------------------------------------------------
 
     const drawFrame = (bitmap: ImageBitmap) => {
-      context.drawImage(bitmap, 0, 0, FRAME_WIDTH, FRAME_HEIGHT);
+      context.drawImage(bitmap, 0, 0, frameWidth, frameHeight);
     };
 
     const nearestDecoded = (index: number) => {
@@ -280,12 +309,6 @@ export function FrameSequence({ storyRef, reducedMotion }: FrameSequenceProps) {
       }
       lastDrawKey = key;
       lastDrawnIndex = drawIndex;
-      if (ambient && ambientContext && portrait.matches) {
-        ambientContext.drawImage(canvas, 0, 0, AMBIENT_WIDTH, AMBIENT_HEIGHT);
-        ambientContext.fillStyle = "rgb(10 10 8 / 0.45)";
-        ambientContext.fillRect(0, 0, AMBIENT_WIDTH, AMBIENT_HEIGHT);
-        if (!ambient.dataset.live) ambient.dataset.live = "true";
-      }
       // The SSR poster sits underneath until the canvas has real pixels.
       if (!canvas.dataset.live) canvas.dataset.live = "true";
     };
@@ -330,17 +353,8 @@ export function FrameSequence({ storyRef, reducedMotion }: FrameSequenceProps) {
       animationFrame = window.requestAnimationFrame(tick);
     };
 
-    canvas.width = FRAME_WIDTH;
-    canvas.height = FRAME_HEIGHT;
-    if (ambient) {
-      ambient.width = AMBIENT_WIDTH;
-      ambient.height = AMBIENT_HEIGHT;
-    }
-    // Rotating into portrait needs the fill painted even if the frame hasn't changed.
-    const redraw = () => {
-      lastDrawKey = "";
-    };
-    portrait.addEventListener("change", redraw);
+    canvas.width = frameWidth;
+    canvas.height = frameHeight;
     measure();
     displayed = Math.round(frameAt(window.scrollY));
     previousDisplayed = displayed;
@@ -355,15 +369,15 @@ export function FrameSequence({ storyRef, reducedMotion }: FrameSequenceProps) {
       window.cancelAnimationFrame(animationFrame);
       window.removeEventListener("resize", measure);
       observer.disconnect();
-      portrait.removeEventListener("change", redraw);
       decoded.forEach((bitmap) => bitmap.close());
       decoded.clear();
+      // Resizing the canvas for the next frame set blanks it; show the poster until it draws.
+      delete canvas.dataset.live;
     };
-  }, [reducedMotion, storyRef]);
+  }, [portrait, reducedMotion, storyRef]);
 
   return (
     <>
-      <canvas ref={ambientRef} className="frame-ambient" aria-hidden="true" />
       <canvas
         ref={canvasRef}
         className="frame-canvas"
