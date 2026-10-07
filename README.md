@@ -11,7 +11,7 @@ A clean full-stack starter running on [vinext](https://github.com/cloudflare/vin
 
 ## Sites Lifecycle
 
-The Sites initializer copies the shared starter and selects managed-linux only when `SITES_MANAGED_LINUX_CONTAINER=1`; otherwise it selects portable. It saves the selection only in ignored `.sites-runtime/execution-profile.json`. Both profiles copy/configure first, then use the plugin's separate `install-dependencies.mjs` step to measure installation independently. Edit source under `app/` and follow the Sites skill for installation, preview, builds, and publishing.
+The Sites initializer copies the shared starter and selects managed-linux only when `SITES_MANAGED_LINUX_CONTAINER=1`; otherwise it selects portable. It saves the selection only in ignored `.sites-runtime/execution-profile.json`. Both profiles copy/configure first, then use the plugin's separate `install-dependencies.mjs` step to measure installation independently. Edit source under `src/` and follow the Sites skill for installation, preview, builds, and publishing.
 
 Run `node <plugin-root>/scripts/configure-execution-profile.mjs` only when the profile is unknown for the current checkout and environment. Profile changes do not alter tracked source or require reinstalling otherwise-valid dependencies; restart an existing preview to use the new selection. Do not commit or upload `.sites-runtime/`.
 
@@ -38,12 +38,12 @@ Local tool usage metrics are disabled by default. Set `WRANGLER_SEND_METRICS=tru
 
 ## Included Shape
 
-- edit site code under `app/`
-- `app/chatgpt-auth.ts` provides optional dispatch-owned ChatGPT sign-in helpers
+- edit site code under `src/` (`src/app` routes, `src/components`, `src/lib`, `src/hooks`)
+- `src/app/chatgpt-auth.ts` provides optional dispatch-owned ChatGPT sign-in helpers
 - `.openai/hosting.json` declares optional Sites D1 and R2 bindings
 - `vite.config.ts` simulates declared bindings for local development
-- `db/index.ts` reads the D1 binding from the Cloudflare Worker environment
-- `db/schema.ts` starts intentionally empty
+- `src/db/index.ts` reads the D1 binding from the Cloudflare Worker environment
+- `src/db/schema.ts` starts intentionally empty
 - `@cloudflare/workers-types` provides Worker types; `cloudflare-env.d.ts` declares optional `DB`/`BUCKET` bindings—update these declarations if binding names change
 - `examples/d1/` contains an optional D1 example surface
 - `drizzle.config.ts` supports local migration generation when needed
@@ -80,7 +80,7 @@ export default async function Home() {
 
 ## Optional Dispatch-Owned ChatGPT Sign-In
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs optional or required ChatGPT sign-in:
+Import the ready-to-use helpers from `src/app/chatgpt-auth.ts` when the site needs optional or required ChatGPT sign-in:
 
 - Use `getChatGPTUser()` for optional signed-in UI.
 - Use the returned `userId` as the stable user key for user-owned records; do not use email as a durable identifier.
