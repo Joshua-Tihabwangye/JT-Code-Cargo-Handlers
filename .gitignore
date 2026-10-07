@@ -44,3 +44,7 @@ next-env.d.ts
 /.codex/
 /outputs/
 /work/
+
+# Local source frame archives (optimized web frames live in public/frames-webp)
+/source-assets/Images.zip
+/source-assets/frames-png/

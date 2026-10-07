@@ -17,9 +17,18 @@ export function useLogisticsTimeline({
 }: TimelineOptions) {
   useLayoutEffect(() => {
     const root = rootRef.current;
-    if (!root || reducedMotion) {
+    if (!root) return;
+
+    const header = document.querySelector<HTMLElement>(".site-header");
+    const railProgress = document.querySelector<HTMLElement>(".journey-rail__track i");
+
+    if (reducedMotion) {
       progressRef.current = 0;
-      document.documentElement.style.setProperty("--journey-progress", "0");
+      if (railProgress) railProgress.style.transform = "scaleY(0)";
+      root.querySelectorAll<HTMLElement>("[data-zone-copy], [data-reveal]").forEach((element) => {
+        element.style.opacity = "1";
+        element.style.transform = "none";
+      });
       return;
     }
 
@@ -32,48 +41,66 @@ export function useLogisticsTimeline({
         ease: "none",
         onUpdate: () => {
           progressRef.current = playhead.progress;
-          document.documentElement.style.setProperty(
-            "--journey-progress",
-            `${playhead.progress}`,
-          );
+          if (railProgress) railProgress.style.transform = `scaleY(${playhead.progress})`;
         },
         scrollTrigger: {
           trigger: root,
           start: "top top",
           end: "bottom bottom",
-          scrub: 0.35,
+          scrub: 0.22,
           invalidateOnRefresh: true,
         },
       });
 
-      const reveals = gsap
-        .utils
-        .toArray<HTMLElement>("[data-reveal]", root)
-        .filter((element) => !element.closest(".hero-zone"));
-      reveals.forEach((element) => {
-        gsap.fromTo(
-          element,
-          { autoAlpha: 0.18, y: 36 },
-          {
-            autoAlpha: 1,
-            y: 0,
-            ease: "none",
-            scrollTrigger: {
-              trigger: element,
-              start: "top 92%",
-              end: "top 63%",
-              scrub: 0.22,
-              invalidateOnRefresh: true,
-            },
+      const zones = gsap.utils.toArray<HTMLElement>(".story-zone", root);
+      zones.forEach((zone) => {
+        const copy = zone.querySelector<HTMLElement>("[data-zone-copy]");
+        if (!copy) return;
+
+        const revealItems = gsap.utils.toArray<HTMLElement>("[data-reveal]", copy);
+        const timeline = gsap.timeline({
+          scrollTrigger: {
+            trigger: zone,
+            start: "top 82%",
+            end: "bottom 18%",
+            scrub: 0.55,
+            invalidateOnRefresh: true,
           },
-        );
+        });
+
+        timeline
+          .fromTo(
+            copy,
+            { autoAlpha: 0.04, y: 54, scale: 0.985 },
+            { autoAlpha: 1, y: 0, scale: 1, ease: "power2.out", duration: 0.23 },
+          )
+          .fromTo(
+            revealItems,
+            { autoAlpha: 0.2, y: 22 },
+            { autoAlpha: 1, y: 0, stagger: 0.025, ease: "power2.out", duration: 0.16 },
+            0.07,
+          )
+          .to(copy, { autoAlpha: 1, y: 0, duration: 0.48 })
+          .to(copy, { autoAlpha: 0.05, y: -46, scale: 0.99, ease: "power2.in", duration: 0.23 });
+
+        const chapter = zone.dataset.chapter;
+        if (chapter) {
+          ScrollTrigger.create({
+            trigger: zone,
+            start: "top center",
+            end: "bottom center",
+            onEnter: () => header?.setAttribute("data-active", chapter),
+            onEnterBack: () => header?.setAttribute("data-active", chapter),
+          });
+        }
       });
     }, root);
 
     return () => {
       context.revert();
       progressRef.current = 0;
-      document.documentElement.style.removeProperty("--journey-progress");
+      header?.removeAttribute("data-active");
+      railProgress?.style.removeProperty("transform");
     };
   }, [progressRef, reducedMotion, rootRef]);
 }
