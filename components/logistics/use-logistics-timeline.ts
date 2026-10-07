@@ -19,55 +19,55 @@ export function useLogisticsTimeline({
     const root = rootRef.current;
     if (!root || reducedMotion) {
       progressRef.current = 0;
+      document.documentElement.style.setProperty("--journey-progress", "0");
       return;
     }
 
     gsap.registerPlugin(ScrollTrigger);
 
     const context = gsap.context(() => {
-      const zoneCopies = gsap.utils.toArray<HTMLElement>("[data-zone-copy]", root);
-      const timeline = gsap.timeline({
-        defaults: { ease: "none" },
+      const playhead = { progress: 0 };
+      gsap.to(playhead, {
+        progress: 1,
+        ease: "none",
+        onUpdate: () => {
+          progressRef.current = playhead.progress;
+          document.documentElement.style.setProperty(
+            "--journey-progress",
+            `${playhead.progress}`,
+          );
+        },
         scrollTrigger: {
           trigger: root,
           start: "top top",
           end: "bottom bottom",
-          scrub: 0.7,
+          scrub: 0.35,
           invalidateOnRefresh: true,
-          onUpdate: (self) => {
-            progressRef.current = self.progress;
-            document.documentElement.style.setProperty("--journey-progress", `${self.progress}`);
-          },
         },
       });
 
-      zoneCopies.forEach((zone, index) => {
-        const cards = zone.querySelectorAll<HTMLElement>("[data-reveal]");
-        const start = index * 1.05;
-        timeline
-          .fromTo(
-            zone,
-            { autoAlpha: index === 0 ? 1 : 0.08, yPercent: index === 0 ? 0 : 9 },
-            { autoAlpha: 1, yPercent: 0, duration: 0.18 },
-            start,
-          )
-          .fromTo(
-            cards,
-            { autoAlpha: 0, y: 22, scale: 0.985 },
-            { autoAlpha: 1, y: 0, scale: 1, stagger: 0.045, duration: 0.16 },
-            start + 0.08,
-          );
-
-        if (index < zoneCopies.length - 1) {
-          timeline.to(
-            zone,
-            { autoAlpha: 0.12, yPercent: -7, duration: 0.2 },
-            start + 0.78,
-          );
-        }
+      const reveals = gsap
+        .utils
+        .toArray<HTMLElement>("[data-reveal]", root)
+        .filter((element) => !element.closest(".hero-zone"));
+      reveals.forEach((element) => {
+        gsap.fromTo(
+          element,
+          { autoAlpha: 0.18, y: 36 },
+          {
+            autoAlpha: 1,
+            y: 0,
+            ease: "none",
+            scrollTrigger: {
+              trigger: element,
+              start: "top 92%",
+              end: "top 63%",
+              scrub: 0.22,
+              invalidateOnRefresh: true,
+            },
+          },
+        );
       });
-
-      timeline.to({}, { duration: 0.35 });
     }, root);
 
     return () => {

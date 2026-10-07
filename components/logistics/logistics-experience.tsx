@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import dynamic from "next/dynamic";
 import {
+  AboutSection,
   Footer,
   HeroSection,
   PortTransferSection,
@@ -10,15 +10,8 @@ import {
   TransitSection,
   WarehouseSection,
 } from "./sections";
+import { FrameSequence } from "./frame-sequence";
 import { useLogisticsTimeline } from "./use-logistics-timeline";
-
-const CargoScene = dynamic(
-  () => import("./cargo-scene").then((module) => module.CargoScene),
-  {
-    ssr: false,
-    loading: () => <div className="scene-loading" aria-hidden="true" />,
-  },
-);
 
 export function LogisticsExperience() {
   const rootRef = useRef<HTMLElement>(null);
@@ -42,7 +35,7 @@ export function LogisticsExperience() {
       </a>
       <SiteHeader />
       <div className="scene-layer">
-        <CargoScene progressRef={progressRef} reducedMotion={reducedMotion} />
+        <FrameSequence progressRef={progressRef} reducedMotion={reducedMotion} />
         <div className="scene-vignette" aria-hidden="true" />
         <div className="scene-grain" aria-hidden="true" />
       </div>
@@ -58,6 +51,7 @@ export function LogisticsExperience() {
         <PortTransferSection />
         <TransitSection />
         <WarehouseSection />
+        <AboutSection />
         <Footer />
       </main>
     </>

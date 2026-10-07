@@ -1,15 +1,19 @@
 import {
+  Activity,
   Anchor,
   Boxes,
   Check,
+  CircleDot,
   Fingerprint,
   Gauge,
   LockKeyhole,
   MapPinned,
+  Menu,
   RadioTower,
   ScanLine,
   ShieldCheck,
   ShipWheel,
+  Sparkles,
   Warehouse as WarehouseIcon,
   Waypoints,
   Zap,
@@ -17,6 +21,13 @@ import {
 import { GlassCard } from "./glass-card";
 import { TelemetryCard } from "./telemetry-card";
 import { TrackingCalculator } from "./tracking-calculator";
+
+const navigation = [
+  { href: "#operations", label: "Operations" },
+  { href: "#tracking", label: "Tracking" },
+  { href: "#warehousing", label: "Warehousing" },
+  { href: "#about", label: "About us" },
+];
 
 export function BrandMark() {
   return (
@@ -37,13 +48,22 @@ export function SiteHeader() {
         </span>
       </a>
       <nav aria-label="Primary navigation">
-        <a href="#offloading">Operations</a>
-        <a href="#transit">Tracking</a>
-        <a href="#warehouse">Warehousing</a>
+        {navigation.map((item) => (
+          <a key={item.href} href={item.href}>{item.label}</a>
+        ))}
       </nav>
-      <a className="button button--compact" href="#estimate">
-        Get a quote
+      <a className="button button--compact header-cta" href="#estimate">
+        Plan a shipment
       </a>
+      <details className="mobile-menu">
+        <summary aria-label="Open navigation"><Menu aria-hidden="true" size={20} /></summary>
+        <div>
+          {navigation.map((item) => (
+            <a key={item.href} href={item.href}>{item.label}</a>
+          ))}
+          <a href="#estimate">Plan a shipment</a>
+        </div>
+      </details>
     </header>
   );
 }
@@ -53,164 +73,127 @@ export function HeroSection() {
     <section className="story-zone hero-zone" id="top" aria-labelledby="hero-title">
       <div className="zone-copy hero-copy" data-zone-copy>
         <div className="section-kicker" data-reveal>
-          <span className="signal-line" /> Global cargo command
+          <span className="signal-line" /> Global cargo, one connected journey
         </div>
         <h1 id="hero-title" data-reveal>
-          Next-Gen Cargo Logistics, <em>Engineered.</em>
+          From open water to <em>final handoff.</em>
         </h1>
         <p className="hero-lede" data-reveal>
-          JT-Code Cargo bridges continents with automated precision handling and real-time
-          execution tracking.
+          Port operations, live tracking and secure warehousing—coordinated through one
+          accountable cargo system.
         </p>
         <div className="hero-actions" data-reveal>
-          <a className="button button--primary" href="#estimate">
-            Get a quote
-          </a>
-          <span className="route-status">
-            <span className="status-beacon" /> Network operational
-          </span>
+          <a className="button button--primary" href="#estimate">Plan a shipment</a>
+          <a className="text-link" href="#operations">Explore the journey</a>
         </div>
-        <div className="hero-stats" data-reveal>
-          <div className="hero-stat hero-stat--primary">
-            <strong>99.9%</strong>
-            <span>On-time completion</span>
-          </div>
-          <div className="hero-stat">
-            <RadioTower aria-hidden="true" size={18} />
-            <span>Real-time tracking</span>
-          </div>
-          <div className="hero-stat">
-            <ShieldCheck aria-hidden="true" size={18} />
-            <span>Secure handling</span>
-          </div>
-          <div className="hero-stat">
-            <Waypoints aria-hidden="true" size={18} />
-            <span>Global logistics</span>
-          </div>
+        <div className="hero-signals" data-reveal aria-label="Service highlights">
+          <span><RadioTower aria-hidden="true" size={17} /> Live visibility</span>
+          <span><ShieldCheck aria-hidden="true" size={17} /> Verified handling</span>
+          <span><Waypoints aria-hidden="true" size={17} /> Connected handoffs</span>
         </div>
       </div>
-      <div className="zone-id" aria-hidden="true">
-        01 / MARITIME
+      <div className="scroll-cue" aria-hidden="true">
+        <span>Scroll to move cargo</span><i />
       </div>
+      <div className="zone-id" aria-hidden="true">00 / ARRIVAL</div>
     </section>
   );
 }
 
-const offloadingCards = [
+const operationCards = [
   {
     icon: Gauge,
-    title: "Automated Cranes",
-    copy: "Digitally coordinated lifting and transfer operations reduce handling delays and improve cargo flow.",
+    title: "Coordinated offloading",
+    copy: "Vessel slots, crane movements and ground crews stay aligned through one operating view.",
   },
   {
     icon: ShipWheel,
-    title: "Vessel Optimization",
-    copy: "Intelligent sequencing helps coordinate vessel unloading and downstream transportation.",
+    title: "Port flow control",
+    copy: "Cargo moves from quay to assigned transport with clear milestones and fewer blind handoffs.",
   },
   {
     icon: Zap,
-    title: "Instant Clearing",
-    copy: "Connected operational workflows provide faster visibility from arrival through transfer.",
+    title: "Exception response",
+    copy: "Operational alerts surface delays early so teams can respond before the route is disrupted.",
   },
 ];
 
 export function PortTransferSection() {
   return (
-    <section className="story-zone offloading-zone" id="offloading" aria-labelledby="offloading-title">
-      <div className="zone-copy offloading-copy" data-zone-copy>
+    <section className="story-zone operations-zone" id="operations" aria-labelledby="operations-title">
+      <div className="zone-copy operations-copy" data-zone-copy>
         <div className="section-kicker" data-reveal>
-          <Anchor aria-hidden="true" size={15} /> Port intelligence / Stage 02
+          <Anchor aria-hidden="true" size={15} /> Operations / Port intelligence
         </div>
-        <h2 id="offloading-title" data-reveal>
-          Precision Maritime <em>Offloading</em>
+        <h2 id="operations-title" data-reveal>
+          Every lift, <em>orchestrated.</em>
         </h2>
         <p className="section-intro" data-reveal>
-          Every lift is sequenced from vessel slot to waiting chassis—one connected transfer,
-          zero blind handoffs.
+          We connect the ship, crane, yard and truck into a single operational sequence from
+          berth arrival to gate release.
         </p>
-        <div className="offloading-cards">
-          {offloadingCards.map(({ icon: Icon, title, copy }) => (
+        <div className="operation-cards">
+          {operationCards.map(({ icon: Icon, title, copy }, index) => (
             <GlassCard key={title} className="operation-card" data-reveal>
-              <span className="icon-frame">
-                <Icon aria-hidden="true" size={20} />
-              </span>
-              <div>
-                <h3>{title}</h3>
-                <p>{copy}</p>
-              </div>
+              <span className="card-index">0{index + 1}</span>
+              <span className="icon-frame"><Icon aria-hidden="true" size={20} /></span>
+              <div><h3>{title}</h3><p>{copy}</p></div>
             </GlassCard>
           ))}
         </div>
       </div>
-      <div className="zone-id" aria-hidden="true">
-        02 / PORT TRANSFER
-      </div>
+      <div className="zone-id" aria-hidden="true">01 / OPERATIONS</div>
     </section>
   );
 }
 
 export function TransitSection() {
   return (
-    <section className="story-zone transit-zone" id="transit" aria-labelledby="transit-title">
-      <div className="zone-copy transit-copy" data-zone-copy>
+    <section className="story-zone tracking-zone" id="tracking" aria-labelledby="tracking-title">
+      <div className="zone-copy tracking-copy" data-zone-copy>
         <div className="section-kicker" data-reveal>
-          <MapPinned aria-hidden="true" size={15} /> Intermodal corridor / Stage 03
+          <MapPinned aria-hidden="true" size={15} /> Tracking / Connected corridor
         </div>
-        <h2 id="transit-title" data-reveal>
-          Intermodal Smart <em>Tracking</em>
+        <h2 id="tracking-title" data-reveal>
+          Visibility that <em>moves with cargo.</em>
         </h2>
         <p className="section-intro" data-reveal>
-          Route telemetry turns every movement into an accountable event—from port gate to
-          final approach.
+          Position, condition and custody signals turn every kilometre into a traceable event.
         </p>
         <TelemetryCard />
-        <div className="transit-proof" data-reveal>
-          <div>
-            <Fingerprint aria-hidden="true" size={18} />
-            <span>
-              <strong>Chain of custody</strong>
-              Signed at every handoff
-            </span>
-          </div>
-          <div>
-            <RadioTower aria-hidden="true" size={18} />
-            <span>
-              <strong>Telemetry link</strong>
-              Continuous exception monitoring
-            </span>
-          </div>
+        <div className="tracking-proof" data-reveal>
+          <div><Fingerprint aria-hidden="true" size={19} /><span><strong>Chain of custody</strong>Validated at each handoff</span></div>
+          <div><Activity aria-hidden="true" size={19} /><span><strong>Exception monitoring</strong>Signals reviewed in context</span></div>
         </div>
       </div>
-      <div className="zone-id" aria-hidden="true">
-        03 / SMART TRANSIT
-      </div>
+      <div className="zone-id" aria-hidden="true">02 / TRACKING</div>
     </section>
   );
 }
 
 const capabilities = [
   { icon: ShieldCheck, label: "Secure cargo handling" },
-  { icon: Boxes, label: "Real-time inventory visibility" },
-  { icon: ScanLine, label: "Automated processing" },
-  { icon: LockKeyhole, label: "Controlled warehouse access" },
-  { icon: Waypoints, label: "End-to-end shipment traceability" },
+  { icon: Boxes, label: "Inventory visibility" },
+  { icon: ScanLine, label: "Scan-led processing" },
+  { icon: LockKeyhole, label: "Controlled access" },
+  { icon: Waypoints, label: "End-to-end traceability" },
 ];
 
 export function WarehouseSection() {
   return (
-    <section className="story-zone warehouse-zone" id="warehouse" aria-labelledby="warehouse-title">
+    <section className="story-zone warehouse-zone" id="warehousing" aria-labelledby="warehouse-title">
       <div className="zone-copy warehouse-copy" data-zone-copy>
         <div className="section-kicker" data-reveal>
-          <WarehouseIcon aria-hidden="true" size={15} /> Fulfilment control / Stage 04
+          <WarehouseIcon aria-hidden="true" size={15} /> Warehousing / Secure processing
         </div>
         <div className="warehouse-heading-row">
           <div>
             <h2 id="warehouse-title" data-reveal>
-              Secure Warehousing <em>& Fulfilment</em>
+              Received. Verified. <em>Ready.</em>
             </h2>
             <p className="section-intro" data-reveal>
-              Arrival triggers a verified processing chain—controlled access, scan validation,
-              and inventory-ready handover.
+              The final approach becomes a controlled warehouse workflow—from dock assignment
+              and scan validation to inventory-ready handover.
             </p>
           </div>
           <div className="processing-badge" data-reveal>
@@ -222,21 +205,42 @@ export function WarehouseSection() {
         <div className="capability-grid" data-reveal>
           {capabilities.map(({ icon: Icon, label }) => (
             <div key={label}>
-              <span className="capability-icon">
-                <Icon aria-hidden="true" size={18} />
-              </span>
+              <span className="capability-icon"><Icon aria-hidden="true" size={18} /></span>
               <span>{label}</span>
               <Check aria-hidden="true" className="capability-check" size={16} />
             </div>
           ))}
         </div>
-        <div id="estimate" className="estimate-anchor">
-          <TrackingCalculator />
+        <div id="estimate" className="estimate-anchor"><TrackingCalculator /></div>
+      </div>
+      <div className="zone-id" aria-hidden="true">03 / WAREHOUSING</div>
+    </section>
+  );
+}
+
+export function AboutSection() {
+  return (
+    <section className="story-zone about-zone" id="about" aria-labelledby="about-title">
+      <div className="zone-copy about-copy" data-zone-copy>
+        <div className="section-kicker" data-reveal>
+          <Sparkles aria-hidden="true" size={15} /> About us / One standard throughout
         </div>
+        <GlassCard className="about-panel" data-reveal>
+          <div className="about-panel__lead">
+            <h2 id="about-title">Cargo is physical. <em>Clarity is digital.</em></h2>
+            <p>
+              JT-Code Cargo is built around a simple operating principle: every movement should
+              be visible, every handoff accountable, and every arrival prepared for what comes next.
+            </p>
+          </div>
+          <div className="about-values" aria-label="Our operating principles">
+            <div><CircleDot aria-hidden="true" size={18} /><span><strong>See the journey</strong>Shared milestones from port to warehouse</span></div>
+            <div><ShieldCheck aria-hidden="true" size={18} /><span><strong>Protect the handoff</strong>Clear custody at every transfer</span></div>
+            <div><Waypoints aria-hidden="true" size={18} /><span><strong>Coordinate the next move</strong>Operations planned as one connected route</span></div>
+          </div>
+        </GlassCard>
       </div>
-      <div className="zone-id" aria-hidden="true">
-        04 / SECURE PROCESSING
-      </div>
+      <div className="zone-id" aria-hidden="true">04 / ABOUT US</div>
     </section>
   );
 }
@@ -247,37 +251,33 @@ export function Footer() {
       <div className="footer-lead">
         <div className="brand brand--footer">
           <BrandMark />
-          <span className="brand__text">
-            <strong>JT-CODE</strong>
-            <small>CARGO SYSTEMS</small>
-          </span>
+          <span className="brand__text"><strong>JT-CODE</strong><small>CARGO SYSTEMS</small></span>
         </div>
-        <h2>Move cargo with complete operational clarity.</h2>
-        <a className="button button--primary" href="#estimate">
-          Plan a shipment
-        </a>
+        <div>
+          <span className="section-kicker">Your cargo. One clear route.</span>
+          <h2>Ready to move with confidence?</h2>
+        </div>
+        <a className="button button--primary" href="#estimate">Plan a shipment</a>
       </div>
       <div className="footer-grid">
         <div>
-          <span>Operations</span>
-          <a href="#offloading">Maritime offloading</a>
-          <a href="#transit">Smart transit</a>
-          <a href="#warehouse">Warehousing</a>
+          <span>Journey</span>
+          {navigation.map((item) => <a key={item.href} href={item.href}>{item.label}</a>)}
         </div>
         <div>
           <span>Network desk</span>
-          <p>24/7 cargo coordination</p>
-          <p>Operations shown in UTC</p>
+          <p>Port-to-warehouse coordination</p>
+          <p>Route planning and shipment visibility</p>
         </div>
         <div>
-          <span>System</span>
-          <p className="footer-online"><i /> All routes monitored</p>
+          <span>Operations status</span>
+          <p className="footer-online"><i /> Cargo systems online</p>
           <p>Secure planning environment</p>
         </div>
       </div>
       <div className="footer-base">
         <span>© 2026 JT-Code Cargo</span>
-        <span>Precision across every handoff.</span>
+        <a href="#top">Return to start</a>
       </div>
     </footer>
   );
